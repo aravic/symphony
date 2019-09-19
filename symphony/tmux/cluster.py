@@ -87,7 +87,7 @@ class TmuxCluster(Cluster):
         'export {}={}'.format(k, shlex.quote(v))
         for k, v in process.env.items()
     ]
-    cmds = env_cmds + preamble_cmds + process.cmds
+    cmds = process.ssh_commands + env_cmds + preamble_cmds + process.cmds
     if cmds:
       start_time = time.time()
       pane = window.attached_pane

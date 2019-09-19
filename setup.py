@@ -30,7 +30,7 @@ setup(
         "docker",
         "pyyaml",
         "benedict>=0.3",
-        "nanolog",
+        "paramiko",
     ],
     python_requires='>=3.5',
     include_package_data=True,
