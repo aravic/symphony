@@ -68,17 +68,7 @@ class TmuxCluster(Cluster):
       pass
     return self._tmux.new_session(session_name)
 
-  def _create_process(self,
-                      sess,
-                      process,
-                      preamble_cmds,
-                      process_group=None,
-                      timeout=4):
-    if process_group:
-      window_name = ':'.join((process_group.name, process.name))
-    else:
-      window_name = process.name
-    window = sess.new_window(window_name=window_name)
+  def _create_process(self, sess, process, pane, preamble_cmds, timeout=4):
 
     # Retry loop to make sure we run process commands after
     # shell starts (heuristically checked by ensuring pane has
@@ -92,7 +82,6 @@ class TmuxCluster(Cluster):
     timeouts += [0.] * (len(cmds) - len(process.ssh_commands))
     if cmds:
       start_time = time.time()
-      pane = window.attached_pane
       while time.time() < start_time + timeout:
         stdout = pane.cmd('capture-pane', '-p').stdout
         if stdout:
@@ -102,14 +91,17 @@ class TmuxCluster(Cluster):
           break
         time.sleep(0.2)
 
-  def _send_cmd(self, experiment_name, process, process_group_name=None):
-    window = self._get_window(experiment_name,
-                              process.name,
-                              group_name=process_group_name)
-    pane = window.attached_pane
-    if process.cmds:
-      for cmd in process.cmds:
-        pane.send_keys(cmd)
+  def _new_window(self, sess, window_name):
+    win = sess.new_window(window_name)
+    win.select_layout('tiled')
+    win.set_window_option('aggressive-resize', 'on')
+    return win
+
+  def _split_window(self, win):
+    win.split_window(vertical=False)
+    win.select_layout('tiled')
+    win.set_window_option('aggressive-resize', 'on')
+    return win
 
   # ===================== Launch API =======================
   def new_experiment(self, *args, **kwargs):
@@ -133,20 +125,30 @@ class TmuxCluster(Cluster):
     for pg in spec.list_process_groups():
       preamble_cmds = spec.preamble_cmds + pg.preamble_cmds
       _log(' --> Creating process group', pg.name)
-      for p in pg.list_processes():
-        window_name = ':'.join((pg.name, p.name))
+      if not dry_run:
+        # Create new window.
+        pg_win = self._new_window(sess, window_name=pg.name)
+
+      for i, p in enumerate(pg.list_processes()):
+        is_last = (i == len(pg.list_processes()) - 1)
         if not dry_run:
           t = Thread(target=self._create_process,
-                     args=(sess, p, preamble_cmds),
-                     kwargs=dict(process_group=pg))
+                     args=(sess, p, pg_win.attached_pane, preamble_cmds))
           t.start()
           threads.append(t)
-        _log(' --> --> Created process', window_name)
+          if is_last:
+            pass
+          else:
+            pg_win = self._split_window(pg_win)
+
+        _log(' --> --> Created process', ':'.join((pg.name, p.name)))
 
     for p in spec.list_processes():
       if not dry_run:
+        # Create new window.
+        pane = self._new_window(sess, window_name=p.name).attached_pane
         t = Thread(target=self._create_process,
-                   args=(sess, p, spec.preamble_cmds))
+                   args=(sess, p, pane, spec.preamble_cmds))
         t.start()
         threads.append(t)
       _log(' --> Created process', p.name)

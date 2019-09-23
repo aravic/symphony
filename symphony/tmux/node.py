@@ -1,6 +1,8 @@
-import paramiko
+import logging
 import os
 import subprocess
+
+import paramiko
 
 
 class Node:
@@ -116,7 +118,10 @@ class Node:
 
   def _put(self, src_fname, dst_fname):
     """Both paths should be full."""
+    logging.info('Transferring file %s to %s', src_fname, self._ip_addr)
     sftp_cli = self._get_sftp_client()
+    if sftp_cli is None:
+      raise Exception('Not supported without ssh.')
     return sftp_cli.put(src_fname, dst_fname)
 
   # ========== PUBLIC API ================
