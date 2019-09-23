@@ -65,8 +65,14 @@ class TmuxProcessSpec(ProcessSpec):
     return self.node.ip_addr
 
   @property
-  def get_ssh_commands(self):
-    cmd = self.node.get_ssh_command
+  def shell_setup_commands(self):
+    cmds = self.node.get_shell_setup_cmds()
+    assert isinstance(cmds, list)
+    return cmds
+
+  @property
+  def ssh_commands(self):
+    cmd = self.node.get_ssh_cmd()
     if cmd:
       return [cmd]
     else:

@@ -87,15 +87,18 @@ class TmuxCluster(Cluster):
         'export {}={}'.format(k, shlex.quote(v))
         for k, v in process.env.items()
     ]
-    cmds = process.ssh_commands + env_cmds + preamble_cmds + process.cmds
+    cmds = process.ssh_commands + process.shell_setup_commands + env_cmds + preamble_cmds + process.cmds
+    timeouts = [5.0] * len(process.ssh_commands)  # Allocate few sec for ssh.
+    timeouts += [0.] * (len(cmds) - len(process.ssh_commands))
     if cmds:
       start_time = time.time()
       pane = window.attached_pane
       while time.time() < start_time + timeout:
         stdout = pane.cmd('capture-pane', '-p').stdout
         if stdout:
-          for cmd in cmds:
+          for i, cmd in enumerate(cmds):
             pane.send_keys(cmd)
+            time.sleep(timeouts[i])
           break
         time.sleep(0.2)
 

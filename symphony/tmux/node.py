@@ -8,6 +8,7 @@ class Node:
   def __init__(
       self,
       ip_addr,
+      base_dir,
       shell_setup_commands=[],
       use_ssh=True,
       ssh_key_file=None,
@@ -24,7 +25,12 @@ class Node:
     self.ssh_key_file = ssh_key_file
     self.ssh_port = ssh_port
     self._ssh_client = None
+    self._sftp_client = None
     self.ssh_username = ssh_username
+    self._base_dir = base_dir
+    assert isinstance(shell_setup_commands, list)
+    self.shell_setup_commands = ["cd '%s'" % base_dir
+                                 ] + list(shell_setup_commands)
     self.use_ssh = use_ssh
     self.reserved_ports = []
     # If key file is not given, check
@@ -55,8 +61,14 @@ class Node:
                    username=self.ssh_username,
                    port=self.ssh_port,
                    key_filename=self.ssh_key_file)
+    client.get_transport().window_size = 2147483647
     self._ssh_client = client
     return self._ssh_client
+
+  def _get_sftp_client(self):
+    if self._sftp_client: return self._sftp_client
+    self._sftp_client = self._get_ssh_client().open_sftp()
+    return self._sftp_client
 
   def _ssh_run_cmd(self, ssh_client, cmd):
     _, out, err = ssh_client.exec_command(cmd)
@@ -90,11 +102,35 @@ class Node:
     else:
       return self._local_run_cmd(cmd)
 
+  def _put_dir(self, source, target):
+    ''' Uploads the contents of the source directory to the target path. The
+          target directory needs to exists. All subdirectories in source are
+          created under target.
+      '''
+    for item in os.listdir(source):
+      if os.path.isfile(os.path.join(source, item)):
+        self._put(os.path.join(source, item), '%s/%s' % (target, item))
+      else:
+        self.mkdirs('%s/%s' % (target, item))
+        self._put_dir(os.path.join(source, item), '%s/%s' % (target, item))
+
+  def _put(self, src_fname, dst_fname):
+    """Both paths should be full."""
+    sftp_cli = self._get_sftp_client()
+    return sftp_cli.put(src_fname, dst_fname)
+
   # ========== PUBLIC API ================
 
   @property
   def ip_addr(self):
     return self._ip_addr
+
+  @property
+  def base_dir(self):
+    return self._base_dir
+
+  def get_shell_setup_cmds(self):
+    return self.shell_setup_commands
 
   def get_unavailable_ports(self):
     # https://superuser.com/questions/529830/get-a-list-of-open-ports-in-linux
@@ -123,3 +159,19 @@ class Node:
     # no double commitment
     assert port not in self.reserved_ports
     self.reserved_ports.append(port)
+
+  def put_file(self, src_fname, dst_fname):
+    """dst_fname should be full path.
+        Creates directories if required."""
+    dst_fname = os.path.normpath(dst_fname)
+    self.mkdirs(os.path.dirname(dst_fname))
+    self._put(src_fname, dst_fname)
+
+  def put_dir(self, src_path, dst_path):
+    dst_path = os.path.normpath(dst_path)
+    self.mkdirs(os.path.dirname(dst_path))
+    self._put_dir(src_path, dst_path)
+
+  def mkdirs(self, path):
+    ''' Augments mkdir by adding an option to not fail if the folder exists  '''
+    self._run_cmd("mkdir -p '%s' 2> /dev/null" % path)
