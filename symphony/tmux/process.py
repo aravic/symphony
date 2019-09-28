@@ -8,7 +8,7 @@ class TmuxProcessSpec(ProcessSpec):
 
   def __init__(self,
                name,
-               node,
+               node=None,
                cmds=None,
                start_dir=None,
                preferred_ports=[],
@@ -40,6 +40,19 @@ class TmuxProcessSpec(ProcessSpec):
     else:
       self.cmds = list(cmds)
     self.env = {}
+    self.cpu_cost = None
+    self.mem_cost = None
+    self.gpu_compute_cost = None
+    self.gpu_mem_cost = None
+
+  def append_cmds(self, cmds):
+    self.cmds.extend(cmds)
+
+  def set_placement(self, node):
+    self.node = node
+
+  def set_gpus(self, gpus):
+    self.env['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, gpus))
 
   def get_port(self, port=None):
     exclude_ports = set(self.node.get_unavailable_ports())
@@ -62,6 +75,8 @@ class TmuxProcessSpec(ProcessSpec):
 
   @property
   def ip_addr(self):
+    if self.node is None:
+      raise Exception('Node not set in process %s' % self.name)
     return self.node.ip_addr
 
   @property
@@ -97,3 +112,9 @@ class TmuxProcessSpec(ProcessSpec):
     di['start_dir'] = self.start_dir
     di['cmds'] = self.cmds
     return di
+
+  def set_costs(self, cpu, mem, gpu_compute, gpu_mem):
+    self.cpu_cost = cpu
+    self.mem_cost = mem
+    self.gpu_compute_cost = gpu_compute
+    self.gpu_mem_cost = gpu_mem

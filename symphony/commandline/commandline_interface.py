@@ -30,10 +30,16 @@ class SymphonyParser(object):
     )
     self.subparsers.required = True
     self._parsers_cache = {}
+    self._external_parsers = []
 
     self.cluster = self.create_cluster()
 
     self.setup()
+
+  def add_external_parser(self, parser):
+    """All external parsers are run and their args are pruned out
+    before running the main TurrealParser."""
+    self._external_parsers.append(parser)
 
   # ======================================================
   # ==================== Parser setup ====================

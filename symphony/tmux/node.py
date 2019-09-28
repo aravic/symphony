@@ -3,12 +3,16 @@ import os
 import subprocess
 
 import paramiko
+from caraml.zmq import ZmqTimeoutError, get_remote_client
+from spy import Server as SpyServer
+from symphony.utils import ConfigDict
 
 
 class Node:
 
   def __init__(
       self,
+      name,
       ip_addr,
       base_dir,
       shell_setup_commands=[],
@@ -17,12 +21,14 @@ class Node:
       ssh_port=22,
       ssh_username=None,
       ssh_config_file_path=None,  # default is '/home/{ssh_username}/.ssh/config'):
+      spy_port=None,
       **kwargs):
     """
       TODO:
         Handle the case of ssh into the local host.
     """
     del kwargs
+    self.name = name
     self._ip_addr = ip_addr
     self.ssh_key_file = ssh_key_file
     self.ssh_port = ssh_port
@@ -30,6 +36,7 @@ class Node:
     self._sftp_client = None
     self.ssh_username = ssh_username
     self._base_dir = base_dir
+    self.spy_port = spy_port
     assert isinstance(shell_setup_commands, list)
     self.shell_setup_commands = ["cd '%s'" % base_dir
                                  ] + list(shell_setup_commands)
@@ -51,6 +58,10 @@ class Node:
         raise Exception(
             'ssh key file not provided and default not found in ssh config file at %s'
             % ssh_config_file_path)
+
+    self._capacity = None
+    self._util = None
+    self.collected_spy_stats = False
 
   def _get_ssh_client(self):
     if self._ssh_client:
@@ -180,3 +191,69 @@ class Node:
   def mkdirs(self, path):
     ''' Augments mkdir by adding an option to not fail if the folder exists  '''
     self._run_cmd("mkdir -p '%s' 2> /dev/null" % path)
+
+  def collect_spy_stats(self, measurement_time):
+    try:
+      rc = get_remote_client(SpyServer,
+                             host=self._ip_addr,
+                             port=self.spy_port,
+                             timeout=measurement_time + 5)
+      self._capacity = ConfigDict(rc.get_capacity())
+      self._util = ConfigDict(rc.get_instantaneous_profile(measurement_time))
+      self._util.gpu_compute = []
+      self._util.gpu_mem = []
+      while True:
+        i = 0
+        broken = False
+        for k in self._util:
+          if 'gpu/%d' % i in k:
+            self._util['gpu_compute'].append(self._util['gpu/%d/compute' % i])
+            self._util['gpu_mem'].append(self._util['gpu/%d/memory' % i])
+            broken = True
+            break
+        if not broken:
+          break
+        i += 1
+      self.collected_spy_stats = True
+    except ZmqTimeoutError as e:
+      print('Unable to connect to SPY Server: %s:%d' %
+            (self.ip_addr, self.spy_port))
+      raise e
+
+  def _check_spy_stats_available(self):
+    if not self.collected_spy_stats:
+      raise Exception('Collect spy stats before quering for available metrics')
+    return True
+
+  def avail_cpu(self):
+    self._check_spy_stats_available()
+    return self._util.cpu - self._capacity.cpu
+
+  def avail_mem(self):
+    self._check_spy_stats_available()
+    return self._util.memory - self._capacity.memory
+
+  def avail_gpu_compute(self, gpu_model_to_scale):
+    """
+      gpu_model_to_scale is a dict from model string to scale.
+    """
+    self._check_spy_stats_available()
+    l = []
+    for u, model in zip(self._util.gpu_compute, self._capacity.gpu_model):
+      found = False
+      for k, scale in gpu_model_to_scale.items():
+        if k in model:
+          found = True
+          break
+
+      if found:
+        l.append(scale * (1 - u))
+      else:
+        raise Exception('Unknown GPU model %s found on host %s' %
+                        (model, self.name))
+
+    return l
+
+  def avail_gpu_mem(self):
+    self._check_spy_stats_available()
+    return [c - u for c, u in zip(self._capacity.gpu_mem, self._util.gpu_mem)]
