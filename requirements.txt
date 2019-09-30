@@ -3,5 +3,4 @@ nanolog
 docker
 pyyaml
 benedict>=0.3
-nanolog
-paramiko==2.6.0
+paramiko

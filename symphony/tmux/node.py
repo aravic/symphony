@@ -98,7 +98,9 @@ class Node:
     return ''.join(out)
 
   def _local_run_cmd(self, cmd):
-    result = subprocess.run(cmd.split(), stdout=subprocess.PIPE)
+    result = subprocess.run(cmd.split(),
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
     if result.stderr:
       raise Exception(
           'exception encountered when executing command "{cmd}" locally'.
