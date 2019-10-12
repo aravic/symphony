@@ -8,16 +8,16 @@ class TmuxProcessSpec(ProcessSpec):
 
   def __init__(self,
                name,
+               start_dir,
+               env_name,
                node=None,
                cmds=None,
-               start_dir=None,
                preferred_ports=[],
                port_range=None):
     """
         Args:
             name: name of the process
             cmds: list of commands to run
-            start_dir: directory in which the process starts
             node: Host machine for the process.
                   This is used to poll for avail. ports and add ssh commands.
         """
@@ -32,13 +32,14 @@ class TmuxProcessSpec(ProcessSpec):
     self.node = node
     if cmds is None:
       cmds = []
-    self.start_dir = os.path.expanduser(start_dir or '.')
     if not isinstance(cmds, (tuple, list)):
       print_err('[Warning] command "{}" for TmuxProcess "{}" should be a list'.
                 format(cmds, name))
       self.cmds = [cmds]
     else:
       self.cmds = list(cmds)
+    self.env_name = env_name
+    self.start_dir = start_dir
     self.env = {}
     self.cpu_cost = None
     self.mem_cost = None
@@ -83,6 +84,9 @@ class TmuxProcessSpec(ProcessSpec):
   def shell_setup_commands(self):
     cmds = self.node.get_shell_setup_cmds()
     assert isinstance(cmds, list)
+    cmds += ['cd %s' % self.start_dir]
+    if self.env_name:
+      cmds += [self.node.get_env_activate_cmd(self.env_name)]
     return cmds
 
   @property
@@ -104,12 +108,10 @@ class TmuxProcessSpec(ProcessSpec):
 
   def _load_dict(self, di):
     super()._load_dict(di)
-    self.start_dir = di['start_dir']
     self.cmds = di['cmds']
 
   def dump_dict(self):
     di = super().dump_dict()
-    di['start_dir'] = self.start_dir
     di['cmds'] = self.cmds
     return di
 

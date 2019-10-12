@@ -13,7 +13,7 @@ class TmuxExperimentSpec(ExperimentSpec):
   _ProcessClass = TmuxProcessSpec
   _ProcessGroupClass = TmuxProcessGroupSpec
 
-  def __init__(self, name, start_dir=None, preamble_cmds=None):
+  def __init__(self, name, start_dir=None, env_name=None, preamble_cmds=None):
     """
         Args:
             name: name of the Experiment
@@ -29,6 +29,7 @@ class TmuxExperimentSpec(ExperimentSpec):
       preamble_cmds = []
     self.name = name
     self.start_dir = os.path.expanduser(start_dir or '.')
+    self.env_name = env_name
     self.set_preamble_cmds(preamble_cmds)
 
     self.exposed_services = {}
@@ -45,11 +46,13 @@ class TmuxExperimentSpec(ExperimentSpec):
   def _new_process(self, *args, **kwargs):
     if 'start_dir' not in kwargs:
       kwargs['start_dir'] = self.start_dir
+      kwargs['env_name'] = self.env_name
     return TmuxProcessSpec(*args, **kwargs)
 
   def _new_process_group(self, *args, **kwargs):
     if 'start_dir' not in kwargs:
       kwargs['start_dir'] = self.start_dir
+      kwargs['env_name'] = self.env_name
     return TmuxProcessGroupSpec(*args, **kwargs)
 
   def compile(self):
@@ -104,9 +107,11 @@ class TmuxExperimentSpec(ExperimentSpec):
     super()._load_dict(di)
     self.start_dir = di['start_dir']
     self.preamble_cmds = di['preamble_cmds']
+    self.env_name = data['env_name']
 
   def dump_dict(self):
     data = super().dump_dict()
     data['start_dir'] = self.start_dir
+    data['env_name'] = self.env_name
     data['preamble_cmds'] = self.preamble_cmds
     return data

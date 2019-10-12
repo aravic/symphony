@@ -10,23 +10,19 @@ from symphony.utils import ConfigDict
 
 class Node:
 
-  def __init__(
-      self,
-      name,
-      ip_addr,
-      base_dir,
-      shell_setup_commands=[],
-      use_ssh=True,
-      ssh_key_file=None,
-      ssh_port=22,
-      ssh_username=None,
-      ssh_config_file_path=None,  # default is '/home/{ssh_username}/.ssh/config'):
-      spy_port=None,
-      **kwargs):
-    """
-      TODO:
-        Handle the case of ssh into the local host.
-    """
+  def __init__(self,
+               name,
+               ip_addr,
+               base_dir,
+               shell_setup_commands=[],
+               use_ssh=True,
+               ssh_key_file=None,
+               ssh_port=22,
+               ssh_username=None,
+               ssh_config_file_path=None,
+               spy_port=None,
+               **kwargs):
+
     del kwargs
     self.name = name
     self._ip_addr = ip_addr
@@ -192,7 +188,7 @@ class Node:
 
   def mkdirs(self, path):
     ''' Augments mkdir by adding an option to not fail if the folder exists  '''
-    self._run_cmd("mkdir -p '%s' 2> /dev/null" % path)
+    self._run_cmd("mkdir -p '%s'" % path)
 
   def collect_spy_stats(self, measurement_time):
     try:
