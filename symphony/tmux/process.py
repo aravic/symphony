@@ -91,11 +91,7 @@ class TmuxProcessSpec(ProcessSpec):
 
   @property
   def ssh_commands(self):
-    cmd = self.node.get_ssh_cmd()
-    if cmd:
-      return [cmd]
-    else:
-      return []
+    cmd = self.node.get_login_cmds()
 
   def set_envs(self, di):
     """

@@ -1,0 +1,4 @@
+[submodule "ccc"]
+	path = ccc
+	url = git@github.com:aravic/ccc.git
+
