@@ -77,9 +77,7 @@ class TmuxCluster(Cluster):
         'export {}={}'.format(k, shlex.quote(v))
         for k, v in process.env.items()
     ]
-    cmds = process.ssh_commands + process.shell_setup_commands + env_cmds + preamble_cmds + process.cmds
-    timeouts = [5.0] * len(process.ssh_commands)  # Allocate few sec for ssh.
-    timeouts += [0.] * (len(cmds) - len(process.ssh_commands))
+    cmds = process.get_tmux_cmd(env_cmds + preamble_cmds)
     if cmds:
       start_time = time.time()
       while time.time() < start_time + timeout:
@@ -87,9 +85,8 @@ class TmuxCluster(Cluster):
         if stdout:
           for i, cmd in enumerate(cmds):
             pane.send_keys(cmd)
-            time.sleep(timeouts[i])
           break
-        time.sleep(0.2)
+        time.sleep(0.5)
 
   def _new_window(self, sess, window_name):
     win = sess.new_window(window_name)

@@ -1,10 +1,12 @@
 import argparse
+import os
 import time
 
-from easy_dict import EasyDict as ConfigDict
+from absl import app
+from ccc.src.local_node import Node as LocalNode
+from easydict import EasyDict as ConfigDict
 from symphony.commandline import SymphonyParser
 from symphony.engine import Cluster
-from symphony.tmux import Node
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode',
@@ -27,27 +29,30 @@ def create_program(exp):
   for proc in [serv, cli]:
     name = proc.name
     config = ConfigDict()
-    config[name].cpu = 1
-    config[name].mem = 0
-    config[name].gpu_compute = []
-    config[name].gpu_mem = []
+    config.cpu = 1
+    config.mem = 0
+    config.gpu_compute = []
+    config.gpu_mem = []
     proc.set_costs(**config)
 
+  serv.append_cmds(['python server.py'])
+  cli.append_cmds(['python client.py'])
   return serv, cli
 
 
 def localhost_setup():
-  node = Node(
+  node = LocalNode(
       'localhost',
       '127.0.0.1',
       os.path.dirname(os.path.abspath(__file__)),
   )
+  node.allocate()
   return node
 
 
 def localhost_placement(serv, cli, node):
   serv.set_placement(node)
-  cl.set_placement(node)
+  cli.set_placement(node)
 
 
 def main(argv):
@@ -55,7 +60,7 @@ def main(argv):
 
   cluster = Cluster.new('tmux')
 
-  exp = cluster.new_experiment(EXP_NAME, env_name='liaison')
+  exp = cluster.new_experiment(EXP_NAME)
   exp.set_preamble_cmds(PREAMBLE_CMDS)
   serv, cli = create_program(exp)
 
@@ -64,9 +69,11 @@ def main(argv):
     localhost_placement(serv, cli, node)
   else:
     raise Exception('Unknown mode %s' % args.mode)
+
   try:
-    cluster.launch()
-    time.sleep(100000)
+    cluster.launch(exp)
+    while True:
+      time.sleep(100000)
   except KeyboardInterrupt:
     cluster.delete(experiment_name=EXP_NAME)
 

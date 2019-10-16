@@ -11,14 +11,13 @@ def handler(msg):
   return msg
 
 
-class Server:
+class Client:
 
   def __init__(self):
     client = ZmqClient(host=os.environ['SYMPH_TEST_HOST'],
                        port=os.environ['SYMPH_TEST_PORT'],
                        serializer='pickle',
                        deserializer='pickle')
-    client.start_loop(blocking=False)
 
     msg = {'counter': 10, 'scream': 'hello'}
 

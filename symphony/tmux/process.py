@@ -8,8 +8,6 @@ class TmuxProcessSpec(ProcessSpec):
 
   def __init__(self,
                name,
-               start_dir,
-               env_name,
                node=None,
                cmds=None,
                preferred_ports=[],
@@ -38,8 +36,6 @@ class TmuxProcessSpec(ProcessSpec):
       self.cmds = [cmds]
     else:
       self.cmds = list(cmds)
-    self.env_name = env_name
-    self.start_dir = start_dir
     self.env = {}
     self.cpu_cost = None
     self.mem_cost = None
@@ -80,18 +76,9 @@ class TmuxProcessSpec(ProcessSpec):
       raise Exception('Node not set in process %s' % self.name)
     return self.node.ip_addr
 
-  @property
-  def shell_setup_commands(self):
-    cmds = self.node.get_shell_setup_cmds()
-    assert isinstance(cmds, list)
-    cmds += ['cd %s' % self.start_dir]
-    if self.env_name:
-      cmds += [self.node.get_env_activate_cmd(self.env_name)]
-    return cmds
-
-  @property
-  def ssh_commands(self):
-    cmd = self.node.get_login_cmds()
+  def get_tmux_cmd(self, preamble_cmds):
+    return self.node.get_login_cmds() + self.node.dry_run(*(preamble_cmds +
+                                                            self.cmds))
 
   def set_envs(self, di):
     """

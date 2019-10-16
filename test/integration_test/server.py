@@ -23,8 +23,9 @@ class Server:
                             port=os.environ['SYMPH_TEST_PORT'],
                             serializer='pickle',
                             deserializer='pickle')
-    self.server.start_loop(blocking=False)
-    self._thread = Thread(target=self.server.start_loop, args=[handler])
+    self._thread = Thread(target=self.server.start_loop,
+                          args=[handler],
+                          kwargs=dict(blocking=True))
     self._thread.daemon = True
     self._thread.start()
 
