@@ -83,8 +83,18 @@ class TmuxProcessSpec(ProcessSpec):
     return self.node.get_ip_addr(allocation=self.allocation)
 
   def get_tmux_cmd(self, preamble_cmds):
-    return self.node.get_login_cmds() + self.node.dry_run(
-        *(preamble_cmds + self.cmds), allocation=self.allocation)
+    login_cmds = self.node.get_login_cmds()
+    l = self.node.get_allocation_cleanup_cmds(self.allocation)
+    cleanup_cmds = []
+    if l:
+      cleanup_cmds = [
+          'signal_handler() { %s ; }; trap signal_handler HUP TERM EXIT' %
+          ';'.join(l)
+      ]
+
+    app_cmds = self.node.dry_run(*(preamble_cmds + self.cmds),
+                                 allocation=self.allocation)
+    return login_cmds + cleanup_cmds + app_cmds
 
   def set_envs(self, di):
     """

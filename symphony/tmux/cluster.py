@@ -162,6 +162,13 @@ class TmuxCluster(Cluster):
     if experiment_name is None:
       experiment_name = self.current_experiment()
     sess = self._get_session(experiment_name)
+    for win in sess.list_windows():
+      for pane in win.list_panes():
+        # send sigquit
+        pane.send_keys('C-c', enter=False, suppress_history=False)
+        # TODO: Add sigquit as well for cases where cmd won't quit
+        # on interrupt.
+    time.sleep(1)
     sess.kill_session()
 
   def delete_batch(self, experiments):
