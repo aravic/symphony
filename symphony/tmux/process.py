@@ -10,6 +10,7 @@ class TmuxProcessSpec(ProcessSpec):
                name,
                node=None,
                cmds=None,
+               allocation=None,
                preferred_ports=[],
                port_range=None):
     """
@@ -25,6 +26,7 @@ class TmuxProcessSpec(ProcessSpec):
     if port_range is None:
       port_range = range(6000, 20000)
 
+    self.allocation = allocation
     self.preferred_ports = preferred_ports
     self.port_range = list(preferred_ports) + list(port_range)
     self.node = node
@@ -48,24 +50,28 @@ class TmuxProcessSpec(ProcessSpec):
   def set_placement(self, node):
     self.node = node
 
+  def set_allocation(self, allocation):
+    self.allocation = allocation
+
   def set_gpus(self, gpus):
     self.env['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, gpus))
 
   def get_port(self, port=None):
-    exclude_ports = set(self.node.get_unavailable_ports())
+    allocation = self.allocation
+    exclude_ports = set(self.node.get_unavailable_ports(allocation))
 
     if port:  # requesting port
       if port in exclude_ports:
         raise Exception('Requesting %d port which is already taken!' % port)
       if port in self.port_range:
         self.port_range.remove(port)
-        self.node.reserve_port(port)
+        self.node.reserve_port(port, allocation)
       return port
     else:
       for port in self.port_range[:]:
         if port not in exclude_ports:
           self.port_range.remove(port)
-          self.node.reserve_port(port)
+          self.node.reserve_port(port, allocation)
           return port
 
       raise Exception('Run out of ports to allocate')
@@ -74,11 +80,11 @@ class TmuxProcessSpec(ProcessSpec):
   def ip_addr(self):
     if self.node is None:
       raise Exception('Node not set in process %s' % self.name)
-    return self.node.ip_addr
+    return self.node.get_ip_addr(allocation=self.allocation)
 
   def get_tmux_cmd(self, preamble_cmds):
-    return self.node.get_login_cmds() + self.node.dry_run(*(preamble_cmds +
-                                                            self.cmds))
+    return self.node.get_login_cmds() + self.node.dry_run(
+        *(preamble_cmds + self.cmds), allocation=self.allocation)
 
   def set_envs(self, di):
     """

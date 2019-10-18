@@ -19,7 +19,7 @@ def handler(msg):
 class Server:
 
   def __init__(self):
-    self.server = ZmqServer(host='127.0.0.1',
+    self.server = ZmqServer(host='*',
                             port=os.environ['SYMPH_TEST_PORT'],
                             serializer='pickle',
                             deserializer='pickle')
@@ -32,8 +32,8 @@ class Server:
 
 def main():
   s = Server()
-  print('Timed out...')
   time.sleep(args.timeout)
+  print('Timed out...')
 
 
 if __name__ == '__main__':

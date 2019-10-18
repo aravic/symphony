@@ -77,9 +77,10 @@ class TmuxExperimentSpec(ExperimentSpec):
 
   def declare_services(self):
     """
-            Loop through all processes and assign addresses for all declared ports
-        """
+        Loop through all processes and assign addresses for all declared ports
+    """
     # sort them in their order of preferred ports
+    # Must be executed sequentially to allow for port reservations.
     for process in sorted(self.list_all_processes(),
                           key=lambda proc: proc.preferred_ports
                           if proc.preferred_ports else [65536]):
