@@ -16,12 +16,10 @@ class SymphonyParser(object):
         """
     self.master_parser = argparse.ArgumentParser()
     self.master_parser.add_argument('--xmanager_server_host',
-                                    default=os.environ.get(
-                                        'XMANAGER_SERVER_HOST', None),
+                                    default='127.0.0.1',
                                     type=str)
     self.master_parser.add_argument('--xmanager_server_port',
-                                    default=os.environ.get(
-                                        'XMANAGER_SERVER_PORT', None),
+                                    default='5000',
                                     type=str)
 
     self.subparsers = self.master_parser.add_subparsers(

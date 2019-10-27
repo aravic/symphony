@@ -80,13 +80,15 @@ class TmuxCluster(Cluster):
     cmds = process.get_tmux_cmd(env_cmds + preamble_cmds)
     if cmds:
       start_time = time.time()
-      while time.time() < start_time + timeout:
+      # while time.time() < start_time + timeout:
+      while True:
         stdout = pane.cmd('capture-pane', '-p').stdout
         if stdout:
           for i, cmd in enumerate(cmds):
             pane.send_keys(cmd)
           break
-        time.sleep(0.5)
+        time.sleep(.1)
+      # time.sleep(5)
 
   def _new_window(self, sess, window_name):
     win = sess.new_window(window_name)
@@ -129,10 +131,11 @@ class TmuxCluster(Cluster):
       for i, p in enumerate(pg.list_processes()):
         is_last = (i == len(pg.list_processes()) - 1)
         if not dry_run:
-          t = Thread(target=self._create_process,
-                     args=(sess, p, pg_win.attached_pane, preamble_cmds))
-          t.start()
-          threads.append(t)
+          self._create_process(self, p, pg_win.attached_pane, preamble_cmds)
+          # t = Thread(target=self._create_process,
+          #            args=(sess, p, pg_win.attached_pane, preamble_cmds))
+          # t.start()
+          # threads.append(t)
           if is_last:
             pass
           else:
@@ -144,10 +147,11 @@ class TmuxCluster(Cluster):
       if not dry_run:
         # Create new window.
         pane = self._new_window(sess, window_name=p.name).attached_pane
-        t = Thread(target=self._create_process,
-                   args=(sess, p, pane, spec.preamble_cmds))
-        t.start()
-        threads.append(t)
+        self._create_process(self, p, pane, spec.preamble_cmds)
+        # t = Thread(target=self._create_process,
+        #            args=(sess, p, pane, spec.preamble_cmds))
+        # t.start()
+        # threads.append(t)
       _log(' --> Created process', p.name)
 
     for thread in threads:
@@ -159,6 +163,7 @@ class TmuxCluster(Cluster):
 
   # ===================== Action API =======================
   def delete(self, experiment_name):
+    """Threadsafe if libtmux is thread-safe."""
     if experiment_name is None:
       experiment_name = self.current_experiment()
     sess = self._get_session(experiment_name)

@@ -1,3 +1,4 @@
+"""python -m test.integration_test.launcher --pdb_post_mortem -- --mode=localhost"""
 import argparse
 import os
 import time
