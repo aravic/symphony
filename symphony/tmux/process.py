@@ -115,7 +115,7 @@ class TmuxProcessSpec(ProcessSpec):
     return di
 
   def set_costs(self, cpu, mem, gpu_compute, gpu_mem):
-    self.cpu_cost = cpu
-    self.mem_cost = mem
-    self.gpu_compute_cost = gpu_compute
-    self.gpu_mem_cost = gpu_mem
+    self.cpu_cost = float(cpu)
+    self.mem_cost = float(mem)
+    self.gpu_compute_cost = list(map(float, gpu_compute))
+    self.gpu_mem_cost = list(map(float, gpu_mem))
