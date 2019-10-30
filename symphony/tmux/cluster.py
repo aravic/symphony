@@ -85,7 +85,7 @@ class TmuxCluster(Cluster):
         stdout = pane.cmd('capture-pane', '-p').stdout
         if stdout:
           for i, cmd in enumerate(cmds):
-            pane.send_keys(cmd)
+            pane.send_keys(cmd, suppress_history=False)
           break
         time.sleep(.1)
       # time.sleep(5)
@@ -131,11 +131,11 @@ class TmuxCluster(Cluster):
       for i, p in enumerate(pg.list_processes()):
         is_last = (i == len(pg.list_processes()) - 1)
         if not dry_run:
-          self._create_process(self, p, pg_win.attached_pane, preamble_cmds)
-          # t = Thread(target=self._create_process,
-          #            args=(sess, p, pg_win.attached_pane, preamble_cmds))
-          # t.start()
-          # threads.append(t)
+          # self._create_process(self, p, pg_win.attached_pane, preamble_cmds)
+          t = Thread(target=self._create_process,
+                     args=(sess, p, pg_win.attached_pane, preamble_cmds))
+          t.start()
+          threads.append(t)
           if is_last:
             pass
           else:
@@ -147,11 +147,11 @@ class TmuxCluster(Cluster):
       if not dry_run:
         # Create new window.
         pane = self._new_window(sess, window_name=p.name).attached_pane
-        self._create_process(self, p, pane, spec.preamble_cmds)
-        # t = Thread(target=self._create_process,
-        #            args=(sess, p, pane, spec.preamble_cmds))
-        # t.start()
-        # threads.append(t)
+        # self._create_process(self, p, pane, spec.preamble_cmds)
+        t = Thread(target=self._create_process,
+                   args=(sess, p, pane, spec.preamble_cmds))
+        t.start()
+        threads.append(t)
       _log(' --> Created process', p.name)
 
     for thread in threads:
