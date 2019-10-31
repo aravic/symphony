@@ -43,6 +43,7 @@ class TmuxProcessSpec(ProcessSpec):
     self.mem_cost = None
     self.gpu_compute_cost = None
     self.gpu_mem_cost = None
+    self.hard_placement = None
 
   def append_cmds(self, cmds):
     self.cmds.extend(cmds)
@@ -119,3 +120,6 @@ class TmuxProcessSpec(ProcessSpec):
     self.mem_cost = float(mem)
     self.gpu_compute_cost = list(map(float, gpu_compute))
     self.gpu_mem_cost = list(map(float, gpu_mem))
+
+  def set_hard_placement(self, node_name):
+    self.hard_placement = node_name

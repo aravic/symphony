@@ -87,8 +87,8 @@ class TmuxCluster(Cluster):
           for i, cmd in enumerate(cmds):
             pane.send_keys(cmd, suppress_history=False)
           break
-        time.sleep(.1)
-      # time.sleep(5)
+        else:
+          time.sleep(.5)
 
   def _new_window(self, sess, window_name):
     win = sess.new_window(window_name)
