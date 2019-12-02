@@ -173,7 +173,7 @@ class TmuxCluster(Cluster):
         pane.send_keys('C-c', enter=False, suppress_history=False)
         # TODO: Add sigquit as well for cases where cmd won't quit
         # on interrupt.
-    time.sleep(1)
+    time.sleep(.1)
     sess.kill_session()
 
   def delete_batch(self, experiments):

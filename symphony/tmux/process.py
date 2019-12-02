@@ -38,7 +38,8 @@ class TmuxProcessSpec(ProcessSpec):
       self.cmds = [cmds]
     else:
       self.cmds = list(cmds)
-    self.env = {}
+    # overwrite CUDA_VISIBLE_DEVICES with set_gpus
+    self.env = {'CUDA_VISIBLE_DEVICES': ''}
     self.cpu_cost = None
     self.mem_cost = None
     self.gpu_compute_cost = None
