@@ -1,12 +1,13 @@
 import os
-import time
-import libtmux
 import shlex
+import time
+from threading import Thread
+
+import libtmux
 from libtmux.exc import LibTmuxException
 from symphony.engine import Cluster
-from symphony.tmux.experiment import TmuxExperimentSpec
 from symphony.errors import *
-from threading import Thread
+from symphony.tmux.experiment import TmuxExperimentSpec
 
 _SERVER_NAME = '__symphony__'
 _DEFAULT_WINDOW = '__main__'

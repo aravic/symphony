@@ -1,8 +1,9 @@
-import webbrowser
 import argparse
+import os
 import re
 import sys
-import os
+import webbrowser
+
 from symphony.utils.common import print_err
 
 
@@ -21,7 +22,9 @@ class SymphonyParser(object):
     self.master_parser.add_argument('--xmanager_server_port',
                                     default='5000',
                                     type=str)
-
+    self.master_parser.add_argument('--tmux_server_name',
+                                    default='default',
+                                    help='tmux socket server name')
     self.subparsers = self.master_parser.add_subparsers(
         help='action commands',
         dest='action'  # will store to parser.subcommand_name
@@ -30,7 +33,7 @@ class SymphonyParser(object):
     self._parsers_cache = {}
     self._external_parsers = []
 
-    self.cluster = self.create_cluster()
+    # self.cluster = self.create_cluster()
 
     self.setup()
 
