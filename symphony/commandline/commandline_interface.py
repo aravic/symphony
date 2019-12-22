@@ -22,7 +22,8 @@ class SymphonyParser(object):
     self.master_parser.add_argument('--xmanager_server_port',
                                     default='5000',
                                     type=str)
-    self.master_parser.add_argument('--tmux_server_name',
+    self.master_parser.add_argument('-L',
+                                    '--tmux_server_name',
                                     default='default',
                                     help='tmux socket server name')
     self.subparsers = self.master_parser.add_subparsers(

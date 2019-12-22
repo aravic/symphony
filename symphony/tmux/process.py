@@ -1,6 +1,8 @@
 import os
+
 from symphony.spec import ProcessSpec
 from symphony.utils.common import print_err
+
 from .common import tmux_name_check
 
 
@@ -39,7 +41,7 @@ class TmuxProcessSpec(ProcessSpec):
     else:
       self.cmds = list(cmds)
     # overwrite CUDA_VISIBLE_DEVICES with set_gpus
-    self.env = {'CUDA_VISIBLE_DEVICES': ''}
+    self.env = dict(CUDA_VISIBLE_DEVICES='')
     self.cpu_cost = None
     self.mem_cost = None
     self.gpu_compute_cost = None
