@@ -1,5 +1,6 @@
 import os
 
+from ccc.src import LSFNode
 from symphony.spec import ProcessSpec
 from symphony.utils.common import print_err
 
@@ -87,6 +88,9 @@ class TmuxProcessSpec(ProcessSpec):
     return self.node.get_ip_addr(allocation=self.allocation)
 
   def get_tmux_cmd(self, preamble_cmds):
+    if isinstance(self.node, LSFNode):
+      self.node.release_allocation_hold(self.allocation)
+
     login_cmds = self.node.get_login_cmds()
     l = self.node.get_allocation_cleanup_cmds(self.allocation)
     cleanup_cmds = []
@@ -102,10 +106,10 @@ class TmuxProcessSpec(ProcessSpec):
 
   def set_envs(self, di):
     """
-        Set environment variables
-        Args:
-            di(env_var_name(str): env_var_val(str))
-        """
+      Set environment variables
+      Args:
+          di(env_var_name(str): env_var_val(str))
+    """
     for k, v in di.items():
       self.env[k] = str(v)
 

@@ -70,7 +70,6 @@ class TmuxCluster(Cluster):
     return self._tmux.new_session(session_name)
 
   def _create_process(self, sess, process, pane, preamble_cmds, timeout=4):
-
     # Retry loop to make sure we run process commands after
     # shell starts (heuristically checked by ensuring pane has
     # some output in the buffer).
