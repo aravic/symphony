@@ -23,6 +23,7 @@ class Node:
                spy_port=None,
                **kwargs):
 
+    raise Exception(f'Deprecated!!')
     del kwargs
     self.name = name
     self._ip_addr = ip_addr

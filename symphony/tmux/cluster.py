@@ -9,7 +9,6 @@ from symphony.engine import Cluster
 from symphony.errors import *
 from symphony.tmux.experiment import TmuxExperimentSpec
 
-_SERVER_NAME = '__symphony__'
 _DEFAULT_WINDOW = '__main__'
 
 
@@ -30,10 +29,9 @@ class TmuxCluster(Cluster):
             server_name: name of the new Tmux server (i.e. socket_name)
         """
     super().__init__()  # just for linter's happiness
-    self._socket_name = server_name or _SERVER_NAME
-    # Use /dev/null as config to ignore all user-specific settings.
+    self._socket_name = server_name
     self._tmux = libtmux.Server(socket_name=self._socket_name,
-                                config_file='/dev/null')
+                                config_file='/home/ubuntu/.tmux.conf')
 
   # =================== Private helpers ====================
   def _get_session(self, session_name):

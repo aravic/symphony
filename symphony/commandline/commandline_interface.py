@@ -24,7 +24,7 @@ class SymphonyParser(object):
                                     type=str)
     self.master_parser.add_argument('-L',
                                     '--tmux_server_name',
-                                    default='default',
+                                    default=None,
                                     help='tmux socket server name')
     self.subparsers = self.master_parser.add_subparsers(
         help='action commands',
@@ -114,8 +114,9 @@ class SymphonyParser(object):
   def _setup_delete_batch(self):
     parser = self.add_subparser('delete-batch', aliases=['db'])
     parser.add_argument('experiment_names',
-                        nargs='+',
+                        nargs='*',
                         type=str,
+                        default=[''],
                         metavar='experiment_name')
     parser.add_argument('-f',
                         '--force',
